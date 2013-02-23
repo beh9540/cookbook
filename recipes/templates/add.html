@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}New Recipe{% endblock %}
+
+{% block body %}
+<form action="{% url recipe-new %}" method="post">
+	{% csrf_token %}
+	{% for field in recipe_form %}
+		<div class="form-field">
+			{{ field.errors }}
+			{{ field.label_tag}}: {{ field }}
+		</div>
+	{% endfor %}
+	{{ ingrediant_formset }}
+	<p><input type="submit" value="New Recipe" /></p>
+</form>
+{% endblock %}

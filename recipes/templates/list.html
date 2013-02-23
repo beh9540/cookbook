@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Recipe List{% endblock %}
+
+{% block body %}
+
+<table>
+{% for recipe in recipes %}
+<tr>
+	<td><a href="{% url recipe-detail recipe.pk %}">{{recipe.name}}</a></td>
+	<td>{{recipe.description|truncatechars:10}}</td>
+</tr>
+{% empty %}
+<tr>
+	<td>No Recipes Yet! <a href="{%url recipe-new %}">Add one.</a></td>
+</tr>
+{% endfor %}	
+</table>
+
+{% endblock %}
