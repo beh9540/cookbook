@@ -11,25 +11,19 @@ class Recipe(models.Model):
                                 upload_to='pictures/%Y/%m/%d')
     date_added = models.DateTimeField()
 
-class Ingrediant(models.Model):
+class Ingredient(models.Model):
     recipe = models.ForeignKey('Recipe')
     amount = models.CharField(max_length=10)
     unit = models.ForeignKey('Unit')
     name = models.CharField(max_length=64)
+    order = models.PositiveSmallIntegerField()
 
 class Unit(models.Model):
     name = models.CharField(max_length=64)
     abbreviation = models.CharField(max_length=32)
     
-    def findUnit(self, search_string):
-        # first let's strip off any plurals or periods
-        striped_search = str.rstrip('.s')
-        units = Unit.objects.filter(Q(name__exact=search_string) | \
-             Q(abbreviation__exact=search_string) | \
-             Q(name__exact=striped_search) | \
-             Q(abbreviation__exact=striped_search))
-        if len(units) 
-        
+    def __unicode__(self):
+        return self.name
 
 class RecipeStep(models.Model):
     recipe = models.ForeignKey('Recipe')

@@ -11,7 +11,10 @@
 			{{ field.label_tag}}: {{ field }}
 		</div>
 	{% endfor %}
-	{{ ingrediant_formset }}
-	<p><input type="submit" value="New Recipe" /></p>
+	<h2>Ingredients</h2>
+	{{ ingredient_formset }}
+	<h2>Steps</h2>
+	{{ recipe_step_formset }}
+	<p><input type="submit" value="Add Recipe" /></p>
 </form>
 {% endblock %}
