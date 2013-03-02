@@ -9,8 +9,10 @@ from models import Recipe,Unit
 class IngredientForm(forms.Form):
     amount = forms.CharField(max_length=10)
     unit = forms.ModelChoiceField(queryset=Unit.objects.all(), 
-        empty_label=None)
+        required=False)
     name = forms.CharField(max_length=64)
+    order = forms.IntegerField(widget=forms.HiddenInput)
+    delete = forms.BooleanField(widget=forms.HiddenInput)
 
 
 class RecipeForm(forms.ModelForm):
@@ -19,4 +21,6 @@ class RecipeForm(forms.ModelForm):
         exclude = ('date_added',)
 
 class RecipeStepForm(forms.Form):
-    step = forms.TimeField()
+    step = forms.CharField()
+    order = forms.IntegerField(widget=forms.HiddenInput)
+    delete = forms.BooleanField(widget=forms.HiddenInput)

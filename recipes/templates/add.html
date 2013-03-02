@@ -2,6 +2,55 @@
 
 {% block title %}New Recipe{% endblock %}
 
+{% block extend-head %}
+<script type="application/javascript">
+	$(function() {
+		$('#add_ingredient').click(function(){
+			$.get('{% url recipe-new-ingredient %}',function(data){
+				addNewForm('{{ ingredient_formset.prefix }}',data);
+				$('.remove-ingredient').click(function(){
+					var $total_forms = $('#id_{{ ingredient_formset.prefix }}'+
+						'-TOTAL_FORMS');
+					var num_forms = $total_forms.val();
+					$total_forms.val(--num_forms);
+					$(this).parent().parent().remove();
+					return false;
+				});
+			});
+			return false;
+		});
+		$('#add_step').click(function(){
+			$.get('{% url recipe-new-step %}',function(data){
+				addNewForm('{{ recipe_step_formset.prefix }}',data);
+				$('.remove-step').click(function(){
+					var $total_forms = $('#id_{{ recipe_step_formset.prefix }}'+
+						'-TOTAL_FORMS');
+					var num_forms = $total_forms.val();
+					$total_forms.val(--num_forms);
+					$(this).parent().remove();
+					return false;
+				});
+			});
+			return false;
+		});
+		
+	});
+	/*
+	 * Adds new form for formset with prefix prefix
+	 */
+	function addNewForm(prefix,data){
+		$total_forms = $('#id_'+prefix+'-TOTAL_FORMS');
+		var forms = $total_forms.val();
+		var re = /__prefix__/;
+		while(re.test(data)){
+			data = data.replace(re,forms);
+		}
+		$('#'+prefix).append(data);
+		$total_forms.val(++forms);
+	}
+</script>
+{% endblock %}
+
 {% block body %}
 <form action="{% url recipe-new %}" method="post">
 	{% csrf_token %}
@@ -12,9 +61,34 @@
 		</div>
 	{% endfor %}
 	<h2>Ingredients</h2>
-	{{ ingredient_formset }}
+	<table id='ingredients'>
+		<thead>
+			<th>Amount</th>
+			<th></th>
+			<th>Ingredient Name</th>
+		</thead>
+		{{ ingredient_formset.management_form }}
+		{% for form in ingredient_formset %}
+		<tr>
+			{{ form.order }}
+			<td class='ingredient-amount'>{{ form.amount }}</td>
+			<td>{{ form.unit }}</td>
+			<td class="ingredient-name">{{ form.name }}</td>
+		</tr>	
+		{% endfor %}
+	</table>
+	<a id="add_ingredient" href="">Add Ingredient</a>
 	<h2>Steps</h2>
-	{{ recipe_step_formset }}
+	<ol id="recipe_steps">
+		{{ recipe_step_formset.management_form }}
+		{% for form in recipe_step_formset %}
+		{{ form.order }}
+		<li class="recipe-step">
+			{{ form.step }}
+		</li>
+		{% endfor %}
+	</ol>
+	<a id="add_step" href="">Add step</a>
 	<p><input type="submit" value="Add Recipe" /></p>
 </form>
 {% endblock %}

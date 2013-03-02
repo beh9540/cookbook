@@ -1,7 +1,5 @@
 from django.db import models
-from django.db.models import Q
 
-import re
 
 # Create your models here.
 class Recipe(models.Model):
@@ -14,7 +12,7 @@ class Recipe(models.Model):
 class Ingredient(models.Model):
     recipe = models.ForeignKey('Recipe')
     amount = models.CharField(max_length=10)
-    unit = models.ForeignKey('Unit')
+    unit = models.ForeignKey('Unit',blank=True, null=True)
     name = models.CharField(max_length=64)
     order = models.PositiveSmallIntegerField()
 

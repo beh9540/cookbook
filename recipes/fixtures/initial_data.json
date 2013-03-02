@@ -14,5 +14,21 @@
       "name": "pound",
       "abbreviation": "lbs"
     }
+  },
+  {
+  	"model": "recipes.unit",
+  	"pk": 3,
+  	"fields": {
+  		"name": "tablespoon",
+  		"abbreviation": "tbsp"
+  	}
+  },
+  {
+  	"model": "recipes.unit",
+  	"pk": 4,
+  	"fields": {
+  		"name": "teaspoon",
+  		"abbreviation": "tsp"
+  	}
   }
 ]
