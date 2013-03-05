@@ -1,16 +1,21 @@
 <!DOCTYPE html>
+{% load static from staticfiles %}
 <html>
 	<head>
 		<title>{% block title %}Default{% endblock %}</title>
-		<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+		<script src="//code.jquery.com/jquery-1.9.1.js"></script>
+		<script src="//code.jquery.com/ui/1.10.1/jquery-ui.js"></script>
+		<link rel="stylesheet" href="//code.jquery.com/ui/1.10.1/themes/base/jquery-ui.css" />
+		<link rel="stylesheet" type="text/css" href="{% static 'css/main.css' %}" />
 		{% block extend-head %}{% endblock %}
 	</head>
 	<body>
 		<div id="header">
 			<h1>Cookbook</h1>
 			<ul>
-				<li><a href="{%url recipe-new %}">New Recipe</a></li>
+				<li class="inline-title"><a href="{%url recipe-new %}">New Recipe</a></li>
 			</ul>
+			<div class="clear"></div>
 		</div>
 		<div id="body">
 			{% block body %}{% endblock %}

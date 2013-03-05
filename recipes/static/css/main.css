@@ -1,0 +1,16 @@
+/* main css stylesheet */
+.inline-title {
+	float: left;
+	display: block;
+	list-style-type: none;
+	border: 1px solid black;
+}
+
+.clear {
+	clear: both;
+}
+
+input[type=text] {
+	border: 0px;
+	border-bottom: 1px solid black;
+}

@@ -26,10 +26,8 @@ def home(request):
     return render(request,'list.html', {"recipes": recipes})
 
 def add(request, recipe=None):
-    IngrediantFormSet = formset_factory(IngredientForm, can_order=True, 
-        can_delete=True)
-    RecipeStepFormSet = formset_factory(RecipeStepForm, can_order=True, 
-        can_delete=True)
+    IngrediantFormSet = formset_factory(IngredientForm)
+    RecipeStepFormSet = formset_factory(RecipeStepForm)
     if request.method == 'POST':
         recipe_form = RecipeForm(request.POST, request.FILES, prefix='recipe')
         ingredient_formset = IngrediantFormSet(request.POST, 
@@ -40,7 +38,7 @@ def add(request, recipe=None):
             recipe_step_formset.is_valid():
             recipe = recipe_form.save()
             for ingredient_form in ingredient_formset.ordered_forms:
-                order = ingredient_form.cleaned_data.ORDER
+                order = ingredient_form.cleaned_data.order
                 amount = ingredient_form.cleaned_data.amount
                 name = ingredient_form.cleaned_data.name
                 unit = ingredient_form.cleaned_data.unit
@@ -53,7 +51,7 @@ def add(request, recipe=None):
                 )
             for recipe_step_form in recipe_step_formset.ordered_forms:
                 RecipeStep.objects.create(
-                    order = recipe_step_form.cleaned_data.ORDER,
+                    order = recipe_step_form.cleaned_data.order,
                     recipe = recipe,
                     step = recipe_step_form.cleaned_data.step
                 )
@@ -72,12 +70,12 @@ def add(request, recipe=None):
                 obj['amount'] = ingredient.amount
                 obj['unit'] = ingredient.unit
                 obj['name'] = ingredient.name
-                obj['ORDER'] = ingredient.order
+                obj['order'] = ingredient.order
                 initial_ingredients.append(obj)
             for step in recipe.steps:
                 obj = {}
                 obj['step'] = step.step
-                obj['ORDER'] = step.order
+                obj['order'] = step.order
                 initial_steps.append(obj)
             recipe_form = RecipeForm(instance=recipe)
             ingredient_formset = IngrediantFormSet(prefix='ingredients',
@@ -93,8 +91,7 @@ def add(request, recipe=None):
 
 def new_ingredient_form(request):
     if request.is_ajax():
-        IngredientFormSet = formset_factory(IngredientForm, can_order=True, 
-            can_delete=True)
+        IngredientFormSet = formset_factory(IngredientForm)
         empty_form = IngredientFormSet(prefix='ingredients').empty_form
         t = Template('''
             <tr>
@@ -110,8 +107,7 @@ def new_ingredient_form(request):
 
 def new_recipe_step_form(request):
     if request.is_ajax():
-        RecipeStepFormSet = formset_factory(RecipeStepForm, can_order=True,
-            can_delete=True)
+        RecipeStepFormSet = formset_factory(RecipeStepForm)
         empty_form = RecipeStepFormSet(prefix='recipe_steps').empty_form
         t = Template('''
             {{ form.order }}

@@ -1,5 +1,5 @@
 from django.db import models
-
+from datetime import datetime
 
 # Create your models here.
 class Recipe(models.Model):
@@ -8,6 +8,20 @@ class Recipe(models.Model):
     picture = models.ImageField(blank=True, null=True, 
                                 upload_to='pictures/%Y/%m/%d')
     date_added = models.DateTimeField()
+    last_modified = models.DateTimeField()
+    
+    def save(self,*args,**kwargs):
+        now=datetime.now()
+        if self.pk:
+            self.last_modified = now
+        else:
+            self.date_added = now
+            self.last_modified = now 
+        super(Recipe,self).save(*args,**kwargs)
+        
+    def __unicode__(self):
+        return self.name
+        
 
 class Ingredient(models.Model):
     recipe = models.ForeignKey('Recipe')
@@ -15,6 +29,10 @@ class Ingredient(models.Model):
     unit = models.ForeignKey('Unit',blank=True, null=True)
     name = models.CharField(max_length=64)
     order = models.PositiveSmallIntegerField()
+    
+    def __unicode__(self):
+        return self.name
+
 
 class Unit(models.Model):
     name = models.CharField(max_length=64)
@@ -23,10 +41,12 @@ class Unit(models.Model):
     def __unicode__(self):
         return self.name
 
+
 class RecipeStep(models.Model):
     recipe = models.ForeignKey('Recipe')
     order = models.PositiveSmallIntegerField()
     step = models.TextField()
+
 
 class Review(models.Model):
     recipe = models.ForeignKey('Recipe')

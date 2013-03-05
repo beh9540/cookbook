@@ -12,15 +12,13 @@ class IngredientForm(forms.Form):
         required=False)
     name = forms.CharField(max_length=64)
     order = forms.IntegerField(widget=forms.HiddenInput)
-    delete = forms.BooleanField(widget=forms.HiddenInput)
 
 
 class RecipeForm(forms.ModelForm):
     class Meta:
         model = Recipe
-        exclude = ('date_added',)
+        exclude = ('date_added','last_modified')
 
 class RecipeStepForm(forms.Form):
-    step = forms.CharField()
+    step = forms.CharField(widget=forms.Textarea)
     order = forms.IntegerField(widget=forms.HiddenInput)
-    delete = forms.BooleanField(widget=forms.HiddenInput)

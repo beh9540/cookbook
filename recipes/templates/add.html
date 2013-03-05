@@ -5,6 +5,8 @@
 {% block extend-head %}
 <script type="application/javascript">
 	$(function() {
+		$('.sortable').sortable();
+		$('.sortable').disableSelection();
 		$('#add_ingredient').click(function(){
 			$.get('{% url recipe-new-ingredient %}',function(data){
 				addNewForm('{{ ingredient_formset.prefix }}',data);
@@ -33,8 +35,18 @@
 			});
 			return false;
 		});
-		
+		$('#add_recipe_form').submit(function(){
+			$('#ingredients > tbody > tr').each(getOrder);
+			$('#recipe_steps > li').each(getOrder);
+		});
 	});
+	/*
+	 * 
+	 */
+	function getOrder(index,Element){
+		var order = $(Element).children('input[name*="order"]')[0];
+		$(order).val(index);
+	}
 	/*
 	 * Adds new form for formset with prefix prefix
 	 */
@@ -52,12 +64,13 @@
 {% endblock %}
 
 {% block body %}
-<form action="{% url recipe-new %}" method="post">
+<form id="add_recipe_form" action="{% url recipe-new %}" method="post">
 	{% csrf_token %}
 	{% for field in recipe_form %}
 		<div class="form-field">
 			{{ field.errors }}
-			{{ field.label_tag}}: {{ field }}
+			<div>{{ field.label_tag}}</div>
+			<div>{{ field }}</div>
 		</div>
 	{% endfor %}
 	<h2>Ingredients</h2>
@@ -79,11 +92,11 @@
 	</table>
 	<a id="add_ingredient" href="">Add Ingredient</a>
 	<h2>Steps</h2>
-	<ol id="recipe_steps">
+	<ol id="recipe_steps" class="sortable">
 		{{ recipe_step_formset.management_form }}
 		{% for form in recipe_step_formset %}
-		{{ form.order }}
 		<li class="recipe-step">
+			{{ form.order }}
 			{{ form.step }}
 		</li>
 		{% endfor %}
