@@ -1,7 +1,12 @@
+'''
+Created on Feb 21, 2013
+
+@author: bhowell
+'''
 from django.db import models
 from datetime import datetime
 
-# Create your models here.
+
 class Recipe(models.Model):
     name = models.CharField(max_length=64)
     description = models.TextField(blank=True, default='')
@@ -46,10 +51,3 @@ class RecipeStep(models.Model):
     recipe = models.ForeignKey('Recipe')
     order = models.PositiveSmallIntegerField()
     step = models.TextField()
-
-
-class Review(models.Model):
-    recipe = models.ForeignKey('Recipe')
-    rating = models.PositiveSmallIntegerField()
-    review = models.TextField(blank=True, default='')
-    

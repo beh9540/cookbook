@@ -82,12 +82,7 @@
 		</thead>
 		{{ ingredient_formset.management_form }}
 		{% for form in ingredient_formset %}
-		<tr>
-			{{ form.order }}
-			<td class='ingredient-amount'>{{ form.amount }}</td>
-			<td>{{ form.unit }}</td>
-			<td class="ingredient-name">{{ form.name }}</td>
-		</tr>	
+			{% include "addIngredient.html" %}
 		{% endfor %}
 	</table>
 	<a id="add_ingredient" href="">Add Ingredient</a>
@@ -95,10 +90,7 @@
 	<ol id="recipe_steps" class="sortable">
 		{{ recipe_step_formset.management_form }}
 		{% for form in recipe_step_formset %}
-		<li class="recipe-step">
-			{{ form.order }}
-			{{ form.step }}
-		</li>
+			{% include "addRecipeStep.html" %}
 		{% endfor %}
 	</ol>
 	<a id="add_step" href="">Add step</a>
