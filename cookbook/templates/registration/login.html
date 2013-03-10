@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Login{% endblock %}
+
+{% block body %}
+
+<div class="row">
+	<div class="span3 offset4 hero-unit">
+		<form class="form-signin" method="post" action="{% url login %}">
+		{% csrf_token %}
+		<h2>Please sign in</h2>
+		
+		{% if form.errors %}
+		<p>Your username and password didn't match. Please try again.</p>
+		{% endif %}
+		
+		<div class="controls">
+			{{ form.username.label_tag }}
+			{{ form.username }}
+		</div>
+		
+		<div class="controls">
+			{{ form.password.label_tag }}
+			{{ form.password }}
+		</div>
+		
+		<input class="btn btn-primary" type="submit" value="Login" />
+		<input type="hidden" name="next" value="{{ next }}" />
+		</form>
+	</div>
+</div>
+
+{% endblock %}

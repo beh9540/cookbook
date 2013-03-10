@@ -7,18 +7,27 @@ from django import forms
 from models import Recipe,Unit
         
 class IngredientForm(forms.Form):
-    amount = forms.CharField(max_length=10)
+    id = forms.IntegerField(widget=forms.HiddenInput,required=False)
+    amount = forms.CharField(max_length=10,widget=forms.TextInput(attrs={
+        'class':'input-block-level'}))
     unit = forms.ModelChoiceField(queryset=Unit.objects.all(), 
         required=False)
-    name = forms.CharField(max_length=64)
-    order = forms.IntegerField(widget=forms.HiddenInput)
+    name = forms.CharField(max_length=64,widget=forms.TextInput(attrs={
+        'class':'input-block-level'}))
+    number = forms.IntegerField(widget=forms.HiddenInput)
 
 
 class RecipeForm(forms.ModelForm):
     class Meta:
         model = Recipe
-        exclude = ('date_added','last_modified')
+        exclude = ('date_added','last_modified','added_by')
+        widgets = {
+            'description': forms.Textarea(attrs={'rows':'2',
+                'class':'input-block-level'}),
+        }
 
 class RecipeStepForm(forms.Form):
-    step = forms.CharField(widget=forms.Textarea)
-    order = forms.IntegerField(widget=forms.HiddenInput)
+    id = forms.IntegerField(widget=forms.HiddenInput,required=False)
+    step = forms.CharField(widget=forms.Textarea(attrs={'rows':'2',
+        'class':'input-block-level'}))
+    number = forms.IntegerField(widget=forms.HiddenInput)

@@ -1,20 +1,47 @@
 {% extends "base.html" %}
 
-{% block title %}Recipe List{% endblock %}
+{% block title %}{{ page_name }}{% endblock %}
 
 {% block body %}
-
-<table>
+<div class="hero-unit">
+<h2>{{ page_name }}</h2>
+<a class="btn btn-large" href="{% url recipe-new %}"><i class="icon-plus-sign"></i>New Recipe</a>
+<table class="table">
 {% for recipe in recipes %}
 <tr>
 	<td><a href="{% url recipe-detail recipe.pk %}">{{recipe.name}}</a></td>
-	<td>{{recipe.description|truncatechars:10}}</td>
+	<td>{{recipe.description|truncatechars:30}}</td>
+	{% if perms.recipes.delete_recipe %}
+	<td><button class="btn"><i class="icon-remove-circle"></i></button></td>
+	{% endif %}
 </tr>
+
 {% empty %}
 <tr>
 	<td>No Recipes Yet! <a href="{%url recipe-new %}">Add one.</a></td>
 </tr>
 {% endfor %}	
 </table>
-
+<div class="pagination pagination-centered">
+	<ul>
+		{% if contacts.has_previous %}
+            <li><a href="?page={{ contacts.previous_page_number }}">&laquo;</a></li>
+        {% else %}
+        	<li class="disabled"><a href="#">&laquo;</a></li>
+        {% endif %}
+		{% for page in contacts.paginator.page_range %}
+		{% if page == contacts.number %}
+			<li class="active"><a href="?page={{ page }}">{{ page }}</a></li>
+		{% else %}
+			<li><a href="?page={{ page }}">{{ page }}</a></li>
+		{% endif %}
+		{% endfor %}
+		{% if contacts.has_next %}
+            <li><a href="?page={{ contacts.next_page_number }}">&raquo;</a></li>
+        {% else %}
+        	<li class="disabled"><a href="#">&raquo;</a></li>
+        {% endif %}
+	</ul>
+</div>
+</div>
 {% endblock %}

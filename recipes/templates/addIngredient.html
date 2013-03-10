@@ -1,7 +1,9 @@
 <tr>
-	{{ form.order }}
-	<td class='ingredient-amount'>{{ form.amount }}</td>
-	<td>{{ form.unit }}</td>
-	<td class='ingredient-name'>{{ form.name }}</td>
-	<td><a class="remove-ingredient" href="">Remove</a></td>
+	{{ form.number }}
+	<td class="ingredient-amount span3">{{ form.amount }}</td>
+	<td class="span3">{{ form.unit }}</td>
+	<td class="ingredient-name span3">{{ form.name }}</td>
+	<td class="span2">
+		<a class="btn remove-ingredient" href=""><i class="icon-remove-circle"></i>Remove</a>
+	</td>
 </tr>

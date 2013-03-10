@@ -3,8 +3,10 @@ Created on Feb 21, 2013
 
 @author: bhowell
 '''
-from django.db import models
+
 from datetime import datetime
+from django.db import models
+from django.contrib.admin.models import User
 
 
 class Recipe(models.Model):
@@ -14,6 +16,7 @@ class Recipe(models.Model):
                                 upload_to='pictures/%Y/%m/%d')
     date_added = models.DateTimeField()
     last_modified = models.DateTimeField()
+    added_by = models.ForeignKey(User)
     
     def save(self,*args,**kwargs):
         now=datetime.now()
@@ -45,6 +48,11 @@ class Unit(models.Model):
     
     def __unicode__(self):
         return self.name
+
+
+class Favorite(models.Model):
+    user = models.ForeignKey(User)
+    recipe = models.ForeignKey('Recipe')
 
 
 class RecipeStep(models.Model):

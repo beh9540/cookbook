@@ -2,8 +2,53 @@
 
 {% block title %}New Recipe{% endblock %}
 
-{% block extend-head %}
+{% block body %}
+<div class="hero-unit">
+	<h2>New Recipe</h2>
+
+<form id="add_recipe_form" action="{% url recipe-new %}" method="post">
+	{% csrf_token %}
+	{% for field in recipe_form %}
+		<div class="form-field">
+			{{ field.errors }}
+			<div>{{ field.label_tag}}</div>
+			<div>{{ field }}</div>
+		</div>
+	{% endfor %}
+	<h3>Ingredients</h3>
+	{{ ingredient_formset.management_form }}
+	<table id="ingredients" class="table">
+		<thead>
+			<th class="span2">Amount</th>
+			<th />
+			<th class="span2">Ingredient Name</th>
+		</thead>
+		<tbody>
+			{% for form in ingredient_formset %}
+				{% include "addIngredient.html" %}
+			{% endfor %}
+		</tbody>
+	</table>
+	<a id="add_ingredient" class="btn" href=""><i class="icon-plus-sign"></i>Add Ingredient</a>
+	<h3>Steps</h3>
+	{{ recipe_step_formset.management_form }}
+	<ul id="recipe_steps" class="sortable unstyled">
+		{% for form in recipe_step_formset %}
+			{% include "addRecipeStep.html" %}
+		{% endfor %}
+	</ul>
+	<a id="add_step" class="btn" href=""><i class="icon-plus-sign"></i>Add step</a>
+	
+	<div class="form-actions">
+		<input type="submit" value="Add Recipe" />
+	</div>
+</form>
+</div>
+{% endblock %}
+
+{% block extend-js %}
 <script type="application/javascript">
+<!--
 	$(function() {
 		$('.sortable').sortable();
 		$('.sortable').disableSelection();
@@ -44,7 +89,7 @@
 	 * 
 	 */
 	function getOrder(index,Element){
-		var order = $(Element).children('input[name*="order"]')[0];
+		var order = $(Element).children('input[name*="number"]')[0];
 		$(order).val(index);
 	}
 	/*
@@ -60,40 +105,6 @@
 		$('#'+prefix).append(data);
 		$total_forms.val(++forms);
 	}
+-->
 </script>
-{% endblock %}
-
-{% block body %}
-<form id="add_recipe_form" action="{% url recipe-new %}" method="post">
-	{% csrf_token %}
-	{% for field in recipe_form %}
-		<div class="form-field">
-			{{ field.errors }}
-			<div>{{ field.label_tag}}</div>
-			<div>{{ field }}</div>
-		</div>
-	{% endfor %}
-	<h2>Ingredients</h2>
-	<table id='ingredients'>
-		<thead>
-			<th>Amount</th>
-			<th></th>
-			<th>Ingredient Name</th>
-		</thead>
-		{{ ingredient_formset.management_form }}
-		{% for form in ingredient_formset %}
-			{% include "addIngredient.html" %}
-		{% endfor %}
-	</table>
-	<a id="add_ingredient" href="">Add Ingredient</a>
-	<h2>Steps</h2>
-	<ol id="recipe_steps" class="sortable">
-		{{ recipe_step_formset.management_form }}
-		{% for form in recipe_step_formset %}
-			{% include "addRecipeStep.html" %}
-		{% endfor %}
-	</ol>
-	<a id="add_step" href="">Add step</a>
-	<p><input type="submit" value="Add Recipe" /></p>
-</form>
 {% endblock %}

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}{{ recipe.name }}{% endblock %}
+
+{% block body %}
+<div class="hero-unit">
+	<div class="row">
+		<ul class="thumbnails span5">
+			<li>
+				<div class="thumbnail">
+					{% if recipe.picture %}
+					<img src="{{ recipe.picture.url }}" />
+					{% else %}
+					<img data-src="holder.js/300x200/text:Recipe" alt="" />
+					{% endif %}
+				</div>
+			</li>
+		</ul>
+		<div class="span6">
+			<h2>{{ recipe.name }}</h2>
+			{% if perms.recipe.change_recipe %}
+			<a class="btn" href="{% url recipe-update recipe.pk %}"><i class="icon-edit"></i>Update Recipe</a>
+			{% endif %}
+			<p>{{ recipe.description }}</p>
+		</div>
+	</div>
+	
+	<h3>Ingredients</h3>
+	<ul>
+		{% for ingredient in ingredients %}
+		<li> {{ ingredient.amount }} {{ ingredient.unit }} {{ ingredient.name }}</li>
+		{% endfor %}
+	</ul>
+	<h3>Steps</h3>
+	<ol>
+		{% for recipe_step in steps %}
+		<li>{{ recipe_step.step }}</li>
+		{% endfor %}
+	</ol>
+</div>
+{% endblock %}

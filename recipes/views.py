@@ -3,16 +3,17 @@ Created on Feb 21, 2013
 
 @author: bhowell
 '''
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, Http404
 from django.shortcuts import get_object_or_404,render
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.core.urlresolvers import reverse
 from django.forms.formsets import formset_factory
-from models import Recipe, Ingredient, RecipeStep
+from django.contrib.auth.decorators import login_required, permission_required
+from models import Recipe, Ingredient, RecipeStep, Favorite
 from forms import IngredientForm, RecipeForm, RecipeStepForm
 
-
-def home(request):
+@login_required
+def home(request, items_per_page=25):
     '''Sets up the home page
     
     Gets a list of all the recipes, sets up a paginator for the recipes
@@ -25,22 +26,64 @@ def home(request):
         for iteration of all the recipes
     '''
     recipe_list = Recipe.objects.all()
-    paginator = Paginator(recipe_list, 25)
-    
     page = request.GET.get('page')
+    recipes = build_paginator(recipe_list, page, items_per_page)
+
+    return render(request,'list.html', {
+        "recipes": recipes,
+        "page_name": 'Recipes',
+    })
+
+@login_required
+def my_recipes(request, items_per_page=25):
+    '''Gets the recipes for the current user
     
-    try:
-        recipes = paginator.page(page)
-    except PageNotAnInteger:
-        # If page is not an integer, deliver first page.
-        recipes = paginator.page(1)
-    except EmptyPage:
-        # If page is out of range (e.g. 9999), deliver last page of results.
-        recipes = paginator.page(paginator.num_pages)
+    Gets a list of all the recipes, and uses a paginator for the recipes
+    
+    Args:
+        request: the standard django.http.HttpRequest for all views
+        page: [optional] the page of the paginator to load
+    
+    Returns:
+        django.http.HttpResponse with a context containing a recipes variable
+        with a paginator
+    '''
+    recipe_list = Recipe.objects.filter(added_by=request.user)
+    page = request.GET.get('page')
+    recipes = build_paginator(recipe_list, page, items_per_page)
+    
+    return render(request,'list.html', {
+        "recipes": recipes,
+        "page_name": 'My Recipes',
+    })
 
-    return render(request,'list.html', {"recipes": recipes})
+@login_required
+def my_favorites(request, items_per_page=25):
+    '''Gets the recipes for the current user
+    
+    Gets a lost of all the recipes, and uses a paginator for the recipes
+    
+    Args:
+        request: the standard django.http.HttpRequest for all views
+        page: [optional] the page of the paginator to load
+    
+    Returns:
+        django.http.HttpResponse with a context containing a recipes variable
+        with a paginator
+    '''
+    favorites = Favorite.objects.filter(user=request.user)
+    recipe_list = [ f.recipe for f in favorites ]
+    page = request.GET.get('page')
+    recipes = build_paginator(recipe_list, page, items_per_page)
+    
+    return render(request,'list.html', {
+        "recipes": recipes,
+        "page_name": 'Favorites',
+    })
 
-def add(request, recipe_id=None):
+@login_required
+@permission_required('recipes.add_recipe')
+def add(request):
     '''Adds a Recipe
     
     This view follows the create/update pattern for CRUD forms. A GET request
@@ -54,7 +97,6 @@ def add(request, recipe_id=None):
     
     Args:
         request: the standard django.http.HttpRequest for all views
-        recipe_id: pk of a recipe instance, defaults to None
         
     Returns:
         django.http.HttpResponse with a context containing a recipe_form,
@@ -64,6 +106,7 @@ def add(request, recipe_id=None):
     Raises: 
         django.http.Http404: recipe_id was given, but not a valid Recipe object
     '''
+    
     IngrediantFormSet = formset_factory(IngredientForm)
     RecipeStepFormSet = formset_factory(RecipeStepForm)
     if request.method == 'POST':
@@ -75,59 +118,71 @@ def add(request, recipe_id=None):
             prefix='recipe_steps')
         if ingredient_formset.is_valid() and recipe_form.is_valid() and\
             recipe_step_formset.is_valid():
-            recipe_id = recipe_form.save()
-            for ingredient_form in ingredient_formset.ordered_forms:
-                order = ingredient_form.cleaned_data.order
-                amount = ingredient_form.cleaned_data.amount
-                name = ingredient_form.cleaned_data.name
-                unit = ingredient_form.cleaned_data.unit
-                Ingredient.objects.create(
-                    order = order,
-                    recipe_id = recipe_id,
-                    amount = amount,
-                    name = name,
-                    unit = unit
-                )
-            for recipe_step_form in recipe_step_formset.ordered_forms:
+            recipe_id = recipe_form.save(commit=False)
+            recipe_id.added_by = request.user
+            recipe_id.save()
+            for ingredient_form in ingredient_formset:
+                build_ingredient(ingredient_form, recipe_id)
+            for recipe_step_form in recipe_step_formset:
                 RecipeStep.objects.create(
-                    order = recipe_step_form.cleaned_data.order,
-                    recipe_id = recipe_id,
-                    step = recipe_step_form.cleaned_data.step
+                    order = recipe_step_form.cleaned_data['number'],
+                    recipe = recipe_id,
+                    step = recipe_step_form.cleaned_data['step']
                 )
             return HttpResponseRedirect(reverse('home'))
     else:
-        if not recipe_id:
-            recipe_form = RecipeForm(prefix='recipe_id')
-            ingredient_formset = IngrediantFormSet(prefix='ingredients')
-            recipe_step_formset = RecipeStepFormSet(prefix='recipe_steps')
-        else:
-            recipe_id = get_object_or_404(Recipe, pk=recipe_id)
-            initial_ingredients = [ ]
-            initial_steps = [ ]
-            for ingredient in recipe_id.ingredients:
-                obj = {}
-                obj['amount'] = ingredient.amount
-                obj['unit'] = ingredient.unit
-                obj['name'] = ingredient.name
-                obj['order'] = ingredient.order
-                initial_ingredients.append(obj)
-            for step in recipe_id.steps:
-                obj = {}
-                obj['step'] = step.step
-                obj['order'] = step.order
-                initial_steps.append(obj)
-            recipe_form = RecipeForm(instance=recipe_id)
-            ingredient_formset = IngrediantFormSet(prefix='ingredients',
-                initial=initial_ingredients)
-            recipe_step_formset = RecipeStepFormSet(prefix='recipe_steps',
-                initial=initial_steps)
-        
+        recipe_form = RecipeForm(prefix='recipe_id')
+        ingredient_formset = IngrediantFormSet(prefix='ingredients')
+        recipe_step_formset = RecipeStepFormSet(prefix='recipe_steps')
+            
     return render(request, 'add.html', {
         'recipe_form' : recipe_form,                                
         'ingredient_formset' : ingredient_formset,
         'recipe_step_formset' : recipe_step_formset,
     })
-
+    
+@login_required
+@permission_required('recipes.change_recipe')
+def update(request, recipe):
+    if request.method == 'POST':
+        pass
+    else:
+        IngrediantFormSet = formset_factory(IngredientForm, extra=0)
+        RecipeStepFormSet = formset_factory(RecipeStepForm, extra=0)
+        recipe_id = get_object_or_404(Recipe, pk=recipe)
+        initial_ingredients = [ ]
+        initial_steps = [ ]
+        ingredients = recipe_id.ingredient_set.all()
+        ingredients = ingredients.order_by('order')
+        for ingredient in ingredients:
+            obj = {}
+            obj['id'] = ingredient.pk
+            obj['amount'] = ingredient.amount
+            obj['unit'] = ingredient.unit
+            obj['name'] = ingredient.name
+            obj['number'] = ingredient.order
+            initial_ingredients.append(obj)
+        recipe_steps = recipe_id.recipestep_set.all()
+        recipe_steps = recipe_steps.order_by('order')
+        for step in recipe_steps:
+            obj = {}
+            obj['id'] = step.pk
+            obj['step'] = step.step
+            obj['number'] = step.order
+            initial_steps.append(obj)
+        recipe_form = RecipeForm(instance=recipe_id)
+        ingredient_formset = IngrediantFormSet(prefix='ingredients',
+            initial=initial_ingredients)
+        recipe_step_formset = RecipeStepFormSet(prefix='recipe_steps',
+            initial=initial_steps)
+        
+        return render(request, 'add.html', {
+        'recipe_form' : recipe_form,                                
+        'ingredient_formset' : ingredient_formset,
+        'recipe_step_formset' : recipe_step_formset,
+        })
+    
+@login_required
 def new_ingredient_form(request):
     '''View for AJAX ingredient adding
     
@@ -172,7 +227,7 @@ def new_recipe_step_form(request):
     else:
         return HttpResponseRedirect(reverse('home'))
     
-
+@login_required
 def get(request, recipe_id):
     '''Detail view to view a single recipe
     
@@ -191,6 +246,73 @@ def get(request, recipe_id):
     
     django.http.Http404: recipe_id was given, but not a valid Recipe object   
     '''
-    recipe = get_object_or_404(Recipe, pk=recipe_id)
-    return render(request, 'detail.html', {"recipe":recipe})
+    try:
+        recipe = Recipe.objects.select_related().get(pk=recipe_id)
+    except Recipe.DoesNotExist:
+        raise Http404
+    ingredients = recipe.ingredient_set.all()
+    ingredients = ingredients.order_by('order')
+    steps = recipe.recipestep_set.all()
+    steps = steps.order_by('order')
+    return render(request, 'detail.html', {
+       "recipe":recipe,
+       "ingredients":ingredients,
+       "steps":steps,
+    })
+
+def build_paginator(query_set, page, items_per_page):
+    '''Encapsulates the construction of a paginator
+    
+    In order to encourage reuse, this function builds the paginator recipe for
+    django.
+    
+    Args:
+        query_set: the django query_set to paginate over
+        page: the page number of the paginator to return
+        items_per_page: an integer number for the items to put in the paginator
+    
+    Returns:
+        django.core.paginator.Page for the query set containing the number
+        of items requested in items_per_page
+    '''
+    paginator = Paginator(query_set, items_per_page)
+    try:
+        ret_paginator = paginator.page(page)
+    except PageNotAnInteger:
+        # If page is not an integer, deliver first page.
+        ret_paginator = paginator.page(1)
+    except EmptyPage:
+        # If page is out of range (e.g. 9999), deliver last page of results.
+        ret_paginator = paginator.page(paginator.num_pages)
+    return ret_paginator
+
+def build_ingredient(form,recipe,commit=True):
+    '''Encapsulsates the logic in building an ingredient
+    
+    The inline model formset doesn't work in this case because we can't bind the
+    recipe instance to the formset on instantiation. Therefore, we have to build
+    the ingredient objects by hand.
+    
+    Args:
+        form: The IngredientForm instance
+        recipe: The Recipe object the foreign key will reference
+        commit: whether or not the instance should be saved
+    
+    Returns:
+        Ingredient for the form inputed, already saved unless save=False
+    '''
+    order = form.cleaned_data['number']
+    amount = form.cleaned_data['amount']
+    name = form.cleaned_data['name']
+    unit = form.cleaned_data['unit']
+    if 'id' in form.cleaned_data:
+        id = form.cleaned_data['id']
+        ingredient = Ingredient(id=id, amount=amount,name=name,unit=unit,
+            recipe=recipe)
+    else:
+        ingredient = Ingredient(order=order,amount=amount,name=name,unit=unit,
+            recipe=recipe)
+    if commit:
+        ingredient.save()
+    return ingredient
     
