@@ -7,20 +7,28 @@
 <h2>{{ page_name }}</h2>
 <a class="btn btn-large" href="{% url recipe-new %}"><i class="icon-plus-sign"></i>New Recipe</a>
 <table class="table">
-{% for recipe in recipes %}
-<tr>
-	<td><a href="{% url recipe-detail recipe.pk %}">{{recipe.name}}</a></td>
-	<td>{{recipe.description|truncatechars:30}}</td>
-	{% if perms.recipes.delete_recipe %}
-	<td><button class="btn"><i class="icon-remove-circle"></i></button></td>
-	{% endif %}
-</tr>
+<thead>
+	<th>Recipe</th>
+	<th></th>
+	<th>Delete</th>
+</thead>
+<tbody>
+	{% for recipe in recipes %}
+	<tr>
+		<td><a href="{% url recipe-detail recipe.pk %}">{{recipe.name}}</a></td>
+		<td>{{recipe.description|truncatechars:30}}</td>
+		{% if perms.recipes.delete_recipe %}
+		<td><a id="remove{{ recipe.id }}" class="btn remove-recipe"><i class="icon-remove-circle"></i></a></td>
+		{% endif %}
+	</tr>
 
-{% empty %}
-<tr>
-	<td>No Recipes Yet! <a href="{%url recipe-new %}">Add one.</a></td>
-</tr>
-{% endfor %}	
+	{% empty %}
+	<tr>
+		<td>No Recipes Yet! <a href="{%url recipe-new %}">Add one.</a></td>
+	</tr>
+	{% endfor %}
+</tbody>
+	
 </table>
 <div class="pagination pagination-centered">
 	<ul>
@@ -44,4 +52,25 @@
 	</ul>
 </div>
 </div>
+{% endblock %}
+
+{% block extend-js %}
+<script type="application/javascript">
+<!--
+$(function(){
+	$(".remove-recipe").click(function(){
+		var id = new String(this.id);
+		var re = /remove/;
+		while(re.test(id)){
+			id = id.replace(re,"");
+		}
+		$.get('{% url recipe-remove %}?recipe='+id,function(data){
+			if(data=='Success'){
+				$('#remove'+id).parent().parent().remove();
+			}
+		});
+	});
+});
+-->
+</script>
 {% endblock %}
