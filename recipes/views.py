@@ -7,10 +7,10 @@ from django.http import HttpResponseRedirect, Http404
 from django.shortcuts import get_object_or_404,render
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.core.urlresolvers import reverse
-from django.forms.formsets import formset_factory
+from django.forms.models import inlineformset_factory
 from django.contrib.auth.decorators import login_required, permission_required
-from models import Recipe, Ingredient, RecipeStep, Favorite
-from forms import IngredientForm, RecipeForm, RecipeStepForm
+from recipes.models import Recipe, Ingredient, RecipeStep, Favorite
+from recipes.forms import IngredientForm, RecipeForm, RecipeStepForm
 
 @login_required
 def home(request, items_per_page=25):
@@ -107,32 +107,28 @@ def add(request):
         django.http.Http404: recipe_id was given, but not a valid Recipe object
     '''
     
-    IngrediantFormSet = formset_factory(IngredientForm)
-    RecipeStepFormSet = formset_factory(RecipeStepForm)
+    IngredientFormSet = inlineformset_factory(Recipe,Ingredient,extra=1,
+        form=IngredientForm)
+    RecipeStepFormSet = inlineformset_factory(Recipe,RecipeStep,extra=1,
+        form=RecipeStepForm)
     if request.method == 'POST':
         recipe_form = RecipeForm(request.POST, request.FILES, 
-            prefix='recipe_id')
-        ingredient_formset = IngrediantFormSet(request.POST, 
-            prefix='ingredients')
-        recipe_step_formset = RecipeStepFormSet(request.POST,
-            prefix='recipe_steps')
-        if ingredient_formset.is_valid() and recipe_form.is_valid() and\
-            recipe_step_formset.is_valid():
+                prefix='recipe_id')
+        if recipe_form.is_valid():
             recipe_id = recipe_form.save(commit=False)
             recipe_id.added_by = request.user
             recipe_id.save()
-            for ingredient_form in ingredient_formset:
-                build_ingredient(ingredient_form, recipe_id)
-            for recipe_step_form in recipe_step_formset:
-                RecipeStep.objects.create(
-                    order = recipe_step_form.cleaned_data['number'],
-                    recipe = recipe_id,
-                    step = recipe_step_form.cleaned_data['step']
-                )
-            return HttpResponseRedirect(reverse('home'))
+            ingredient_formset = IngredientFormSet(request.POST, 
+                prefix='ingredients',instance=recipe_id)
+            recipe_step_formset = RecipeStepFormSet(request.POST,
+                prefix='recipe_steps',instance=recipe_id)
+            if ingredient_formset.is_valid() and recipe_step_formset.is_valid():
+                ingredient_formset.save()
+                recipe_step_formset.save()
+                return HttpResponseRedirect(reverse('home'))
     else:
         recipe_form = RecipeForm(prefix='recipe_id')
-        ingredient_formset = IngrediantFormSet(prefix='ingredients')
+        ingredient_formset = IngredientFormSet(prefix='ingredients')
         recipe_step_formset = RecipeStepFormSet(prefix='recipe_steps')
             
     return render(request, 'add.html', {
@@ -147,35 +143,6 @@ def update(request, recipe):
     if request.method == 'POST':
         pass
     else:
-        IngrediantFormSet = formset_factory(IngredientForm, extra=0)
-        RecipeStepFormSet = formset_factory(RecipeStepForm, extra=0)
-        recipe_id = get_object_or_404(Recipe, pk=recipe)
-        initial_ingredients = [ ]
-        initial_steps = [ ]
-        ingredients = recipe_id.ingredient_set.all()
-        ingredients = ingredients.order_by('order')
-        for ingredient in ingredients:
-            obj = {}
-            obj['id'] = ingredient.pk
-            obj['amount'] = ingredient.amount
-            obj['unit'] = ingredient.unit
-            obj['name'] = ingredient.name
-            obj['number'] = ingredient.order
-            initial_ingredients.append(obj)
-        recipe_steps = recipe_id.recipestep_set.all()
-        recipe_steps = recipe_steps.order_by('order')
-        for step in recipe_steps:
-            obj = {}
-            obj['id'] = step.pk
-            obj['step'] = step.step
-            obj['number'] = step.order
-            initial_steps.append(obj)
-        recipe_form = RecipeForm(instance=recipe_id)
-        ingredient_formset = IngrediantFormSet(prefix='ingredients',
-            initial=initial_ingredients)
-        recipe_step_formset = RecipeStepFormSet(prefix='recipe_steps',
-            initial=initial_steps)
-        
         return render(request, 'add.html', {
         'recipe_form' : recipe_form,                                
         'ingredient_formset' : ingredient_formset,
@@ -199,7 +166,8 @@ def new_ingredient_form(request):
     
     '''
     if request.is_ajax():
-        IngredientFormSet = formset_factory(IngredientForm)
+        IngredientFormSet = inlineformset_factory(Recipe,Ingredient,extra=1,
+            form=IngredientForm)
         empty_form = IngredientFormSet(prefix='ingredients').empty_form
         return render(request, 'addIngredient.html', {'form': empty_form})
     else:
@@ -221,7 +189,8 @@ def new_recipe_step_form(request):
     
     '''
     if request.is_ajax():
-        RecipeStepFormSet = formset_factory(RecipeStepForm)
+        RecipeStepFormSet = inlineformset_factory(Recipe,RecipeStep,extra=1,
+            form=RecipeStepForm)
         empty_form = RecipeStepFormSet(prefix='recipe_steps').empty_form
         return render(request, 'addRecipeStep.html', {'form': empty_form})
     else:
@@ -251,9 +220,9 @@ def get(request, recipe_id):
     except Recipe.DoesNotExist:
         raise Http404
     ingredients = recipe.ingredient_set.all()
-    ingredients = ingredients.order_by('order')
+    ingredients = ingredients.order_by('number')
     steps = recipe.recipestep_set.all()
-    steps = steps.order_by('order')
+    steps = steps.order_by('number')
     return render(request, 'detail.html', {
        "recipe":recipe,
        "ingredients":ingredients,

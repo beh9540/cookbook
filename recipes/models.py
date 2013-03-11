@@ -36,7 +36,7 @@ class Ingredient(models.Model):
     amount = models.CharField(max_length=10)
     unit = models.ForeignKey('Unit',blank=True, null=True)
     name = models.CharField(max_length=64)
-    order = models.PositiveSmallIntegerField()
+    number = models.PositiveSmallIntegerField()
     
     def __unicode__(self):
         return self.name
@@ -57,5 +57,5 @@ class Favorite(models.Model):
 
 class RecipeStep(models.Model):
     recipe = models.ForeignKey('Recipe')
-    order = models.PositiveSmallIntegerField()
+    number = models.PositiveSmallIntegerField()
     step = models.TextField()
