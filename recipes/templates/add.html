@@ -6,7 +6,7 @@
 <div class="hero-unit">
 	<h2>New Recipe</h2>
 
-<form id="add_recipe_form" action="{% url recipe-new %}" method="post">
+<form id="add_recipe_form" action="{{ form_action }}" method="post">
 	{% csrf_token %}
 	{% for field in recipe_form %}
 		<div class="form-field">
@@ -17,7 +17,7 @@
 	{% endfor %}
 	<h3>Ingredients</h3>
 	{{ ingredient_formset.management_form }}
-	<table id="ingredients" class="table">
+	<table id="{{ ingredient_formset.prefix }}" class="table">
 		<thead>
 			<th class="span2">Amount</th>
 			<th></th>
@@ -32,7 +32,7 @@
 	<a id="add_ingredient" class="btn" href=""><i class="icon-plus-sign"></i>Add Ingredient</a>
 	<h3>Steps</h3>
 	{{ recipe_step_formset.management_form }}
-	<ul id="recipe_steps" class="sortable unstyled">
+	<ul id="{{ recipe_step_formset.prefix }}" class="sortable unstyled">
 		{% for form in recipe_step_formset %}
 			{% include "addRecipeStep.html" %}
 		{% endfor %}
@@ -82,8 +82,8 @@
 			return false;
 		});
 		$('#add_recipe_form').submit(function(){
-			$('#ingredients > tbody > tr').each(getOrder);
-			$('#recipe_steps > li').each(getOrder);
+			$('#{{ ingredient_formset.prefix }} > tbody > tr').each(getOrder);
+			$('#{{ recipe_step_formset.prefix }} > li').each(getOrder);
 		});
 	});
 	/*

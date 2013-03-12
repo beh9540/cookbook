@@ -3,9 +3,9 @@ Created on Feb 21, 2013
 
 @author: bhowell
 '''
-
-from datetime import datetime
 from django.db import models
+from django.utils import timezone
+
 from django.contrib.admin.models import User
 
 
@@ -19,7 +19,7 @@ class Recipe(models.Model):
     added_by = models.ForeignKey(User)
     
     def save(self,*args,**kwargs):
-        now=datetime.now()
+        now = timezone.now()
         if self.pk:
             self.last_modified = now
         else:
@@ -27,6 +27,14 @@ class Recipe(models.Model):
             self.last_modified = now 
         super(Recipe,self).save(*args,**kwargs)
         
+    def is_user_favorite(self,user):
+        try:
+            self.favorite_set.get(user=user)
+        except self.DoesNotExist:
+            return False
+        else:
+            return True
+
     def __unicode__(self):
         return self.name
         

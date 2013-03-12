@@ -51,21 +51,23 @@ class ViewTest(TestCase):
             'recipe-name' : u'Test Recipe',
             'recipe-description' : u'An awesome recipe',
             'ingredients-TOTAL_FORMS' : u'1',
-            'ingredients-INITIAL_FORMS' : u'1',
+            'ingredients-INITIAL_FORMS' : u'0',
             'ingredients-MAX_NUM_FORMS' : u'',
+            'ingredients-0-id' : u'',
             'ingredients-0-amount' : u'1',
             'ingredients-0-unit' : u'1',
             'ingredients-0-name' : u'foo',
             'ingredients-0-number' : u'0',
-            'recipe_steps-TOTAL_FORMS' : u'0',
-            'recipe_steps-INITIAL_FORMS' : u'1',
+            'recipe_steps-TOTAL_FORMS' : u'1',
+            'recipe_steps-INITIAL_FORMS' : u'0',
             'recipe_steps-MAX_NUM_FORMS' : u'',
+            'recipe_steps-0-id' : u'',
             'recipe_steps-0-step' : u'Step foo for 42 minutes',
-            'recipe_steps-0-number' : u'0'
+            'recipe_steps-0-number' : u'0',
         })
-        print response.context
+        print response.content
+        self.assertTemplateNotUsed(response, template_name="add.html")
         self.assertRedirects(response, '/recipes/')
-        self.assertTemplateUsed(response, template_name="list.html")
     
     def test_new_ingredient_form_ajax(self):
         '''
@@ -100,7 +102,9 @@ class ViewTest(TestCase):
             number=1,recipe=recipe)
         
         self.client.login(username=self.test_user, password=self.test_password)
-        response = self.client.get(str.format('/recipes/remove/{0}',recipe.id),
+        response = self.client.get('/recipes/remove/',{
+                'recipe': recipe.id,
+            },
             HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertContains(response, 'Success')
         self.assertNotIn(recipe, Recipe.objects.all())

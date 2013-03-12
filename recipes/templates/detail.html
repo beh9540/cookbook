@@ -18,7 +18,7 @@
 		</ul>
 		<div class="span6">
 			<h2>{{ recipe.name }}</h2>
-			{% if perms.recipe.change_recipe %}
+			{% if perms.recipes.change_recipe %}
 			<a class="btn" href="{% url recipe-update recipe.pk %}"><i class="icon-edit"></i>Update Recipe</a>
 			{% endif %}
 			<p>{{ recipe.description }}</p>
