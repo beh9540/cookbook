@@ -140,14 +140,35 @@ def add(request):
 @login_required
 @permission_required('recipes.change_recipe')
 def update(request, recipe):
+    IngredientFormSet = inlineformset_factory(Recipe,Ingredient,extra=0,
+        form=IngredientForm)
+    RecipeStepFormSet = inlineformset_factory(Recipe,RecipeStep,extra=0,
+        form=RecipeStepForm)
+    recipe = get_object_or_404(Recipe,recipe)
     if request.method == 'POST':
-        pass
+        recipe_form = RecipeForm(request.POST, request.FILES, 
+                prefix='recipe_id')
+        if recipe_form.is_valid():
+            recipe_id = recipe_form.save(commit=False)
+            recipe_id.added_by = request.user
+            recipe_id.save()
+            ingredient_formset = IngredientFormSet(request.POST, 
+                prefix='ingredients',instance=recipe_id)
+            recipe_step_formset = RecipeStepFormSet(request.POST,
+                prefix='recipe_steps',instance=recipe_id)
+            if ingredient_formset.is_valid() and recipe_step_formset.is_valid():
+                ingredient_formset.save()
+                recipe_step_formset.save()
+                return HttpResponseRedirect(reverse('home'))
     else:
-        return render(request, 'add.html', {
+        recipe_form = RecipeForm(instance=recipe)
+        ingredient_formset = IngredientFormSet(instance=recipe)
+        recipe_step_formset = RecipeStepFormSet(instance=recipe)
+    return render(request, 'add.html', {
         'recipe_form' : recipe_form,                                
         'ingredient_formset' : ingredient_formset,
         'recipe_step_formset' : recipe_step_formset,
-        })
+    })
     
 @login_required
 def new_ingredient_form(request):
