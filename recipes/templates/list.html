@@ -8,6 +8,7 @@
 <a class="btn" href="{% url recipe-new %}"><i class="icon-plus-sign"></i>New Recipe</a>
 <table class="table">
 <thead>
+	<th></th>
 	<th>Recipe</th>
 	<th></th>
 	<th>Delete</th>
@@ -15,6 +16,14 @@
 <tbody>
 	{% for recipe in recipes %}
 	<tr>
+		
+		<td>
+			{% if recipe.is_favorite %}
+			<i class="icon-star"></i>
+			{% else %}
+			<i class="icon-star-empty"></i>
+			{% endif %}
+		</td>
 		<td><a href="{% url recipe-detail recipe.pk %}">{{recipe.name}}</a></td>
 		<td>{{recipe.description|truncatechars:30}}</td>
 		{% if perms.recipes.delete_recipe %}

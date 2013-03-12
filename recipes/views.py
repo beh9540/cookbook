@@ -4,6 +4,7 @@ Created on Feb 21, 2013
 @author: bhowell
 '''
 from django.http import HttpResponseRedirect, Http404, HttpResponse
+from django.views.decorators.http import require_GET
 from django.shortcuts import get_object_or_404,render
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.core.urlresolvers import reverse
@@ -49,6 +50,11 @@ def my_recipes(request, items_per_page=25):
         with a paginator
     '''
     recipe_list = Recipe.objects.filter(added_by=request.user)
+    for r in recipe_list:
+        if r.is_user_favorite(request.user):
+            r.is_favorite = True
+        else:
+            r.is_favorite = False
     page = request.GET.get('page')
     recipes = build_paginator(recipe_list, page, items_per_page)
     
@@ -113,7 +119,7 @@ def add(request):
         form=RecipeStepForm)
     if request.method == 'POST':
         recipe_form = RecipeForm(request.POST, request.FILES, 
-                prefix='recipe_id')
+                prefix='recipe')
         if recipe_form.is_valid():
             recipe_id = recipe_form.save(commit=False)
             recipe_id.added_by = request.user
@@ -127,11 +133,12 @@ def add(request):
                 recipe_step_formset.save()
                 return HttpResponseRedirect(reverse('home'))
     else:
-        recipe_form = RecipeForm(prefix='recipe_id')
+        recipe_form = RecipeForm(prefix='recipe')
         ingredient_formset = IngredientFormSet(prefix='ingredients')
         recipe_step_formset = RecipeStepFormSet(prefix='recipe_steps')
             
     return render(request, 'add.html', {
+        'form_action': reverse('recipe-new'),
         'recipe_form' : recipe_form,                                
         'ingredient_formset' : ingredient_formset,
         'recipe_step_formset' : recipe_step_formset,
@@ -144,33 +151,35 @@ def update(request, recipe):
         form=IngredientForm)
     RecipeStepFormSet = inlineformset_factory(Recipe,RecipeStep,extra=0,
         form=RecipeStepForm)
-    recipe = get_object_or_404(Recipe,recipe)
+    recipe = get_object_or_404(Recipe,pk=recipe)
     if request.method == 'POST':
         recipe_form = RecipeForm(request.POST, request.FILES, 
-                prefix='recipe_id')
-        if recipe_form.is_valid():
-            recipe_id = recipe_form.save(commit=False)
-            recipe_id.added_by = request.user
-            recipe_id.save()
-            ingredient_formset = IngredientFormSet(request.POST, 
-                prefix='ingredients',instance=recipe_id)
-            recipe_step_formset = RecipeStepFormSet(request.POST,
-                prefix='recipe_steps',instance=recipe_id)
-            if ingredient_formset.is_valid() and recipe_step_formset.is_valid():
-                ingredient_formset.save()
-                recipe_step_formset.save()
-                return HttpResponseRedirect(reverse('home'))
+                prefix='recipe',instance=recipe)
+        ingredient_formset = IngredientFormSet(request.POST, 
+            prefix='ingredients',instance=recipe)
+        recipe_step_formset = RecipeStepFormSet(request.POST,
+            prefix='recipe_steps',instance=recipe)
+        if recipe_form.is_valid() and ingredient_formset.is_valid() and\
+                recipe_step_formset.is_valid():
+            recipe_form.save()
+            ingredient_formset.save()
+            recipe_step_formset.save()
+            return HttpResponseRedirect(reverse('home'))
     else:
-        recipe_form = RecipeForm(instance=recipe)
-        ingredient_formset = IngredientFormSet(instance=recipe)
-        recipe_step_formset = RecipeStepFormSet(instance=recipe)
+        recipe_form = RecipeForm(instance=recipe,prefix='recipe')
+        ingredient_formset = IngredientFormSet(instance=recipe,
+            prefix='ingredients')
+        recipe_step_formset = RecipeStepFormSet(instance=recipe,
+            prefix='recipe_steps')
     return render(request, 'add.html', {
+        'form_action': reverse('recipe-update', args=[recipe.id]),
         'recipe_form' : recipe_form,                                
         'ingredient_formset' : ingredient_formset,
         'recipe_step_formset' : recipe_step_formset,
     })
         
 @login_required
+@require_GET
 @permission_required('recipes.delete_recipe')
 def remove(request):
     if request.is_ajax() and 'recipe' in request.GET:
@@ -180,6 +189,49 @@ def remove(request):
             return HttpResponse("Error", content_type="text/plain")
         del_recipe.delete()
         return HttpResponse("Success", content_type="text/plain")
+    else:
+        return HttpResponseRedirect(reverse('home'))
+
+@login_required
+@require_GET
+def favorite(request, recipe):
+    '''View for AJAX favoriting
+    
+    View supports both adding and removing favorites from a recipe for a user.
+    The view first makes sure the requst is using the HTTP_X_REQUESTED_WITH 
+    variable, then checks to see if the remove variable was in the request and
+    set to "True". If so, it checks to verify the Favorite object exists, and 
+    deletes the object, returning "Success" and "Error" as appropriate. If the
+    request does not contain "remove", a favorite is added for the Recipe, if it
+    does not already exist. Responds with "Error" if the favorite already 
+    existed.
+    
+    Args:
+        request: the standard view request
+        recipe: the recipe id to add/remove the favorite from
+    
+    Returns:
+        A HttpResponseRedirect to home if the request is not ajax, a 
+        HttpResponse object with a content_type of "text/plain" for ajax
+        requests, and either "Success" or "Error" as the content depending
+        on the logic
+    '''
+    if request.is_ajax():
+        recipe = get_object_or_404(Recipe,pk=recipe)
+        if 'remove' in request.GET and request.GET['remove']=='True':
+            try:
+                Favorite.objects.get(recipe=recipe,user=request.user).delete()
+            except Favorite.DoesNotExist:
+                return HttpResponse("Error", content_type="text/plain")
+            else:
+                return HttpResponse("Success", content_type="text/plain")
+        else:
+            try:
+                Favorite.objects.get(recipe=recipe,user=request.user)
+            except Favorite.DoesNotExist:
+                Favorite.objects.create(user=request.user,recipe=recipe)
+                return HttpResponse("Success", content_type="text/plain")
+            return HttpResponse("Error", content_type="text/plain")
     else:
         return HttpResponseRedirect(reverse('home'))
     
@@ -288,34 +340,3 @@ def build_paginator(query_set, page, items_per_page):
         # If page is out of range (e.g. 9999), deliver last page of results.
         ret_paginator = paginator.page(paginator.num_pages)
     return ret_paginator
-
-def build_ingredient(form,recipe,commit=True):
-    '''Encapsulsates the logic in building an ingredient
-    
-    The inline model formset doesn't work in this case because we can't bind the
-    recipe instance to the formset on instantiation. Therefore, we have to build
-    the ingredient objects by hand.
-    
-    Args:
-        form: The IngredientForm instance
-        recipe: The Recipe object the foreign key will reference
-        commit: whether or not the instance should be saved
-    
-    Returns:
-        Ingredient for the form inputed, already saved unless save=False
-    '''
-    order = form.cleaned_data['number']
-    amount = form.cleaned_data['amount']
-    name = form.cleaned_data['name']
-    unit = form.cleaned_data['unit']
-    if 'id' in form.cleaned_data:
-        id = form.cleaned_data['id']
-        ingredient = Ingredient(id=id, amount=amount,name=name,unit=unit,
-            recipe=recipe)
-    else:
-        ingredient = Ingredient(order=order,amount=amount,name=name,unit=unit,
-            recipe=recipe)
-    if commit:
-        ingredient.save()
-    return ingredient
-    
