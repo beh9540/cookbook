@@ -3,7 +3,7 @@ Created on Feb 21, 2013
 
 @author: bhowell
 '''
-from django.http import HttpResponseRedirect, Http404
+from django.http import HttpResponseRedirect, Http404, HttpResponse
 from django.shortcuts import get_object_or_404,render
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.core.urlresolvers import reverse
@@ -169,6 +169,19 @@ def update(request, recipe):
         'ingredient_formset' : ingredient_formset,
         'recipe_step_formset' : recipe_step_formset,
     })
+        
+@login_required
+@permission_required('recipes.delete_recipe')
+def remove(request):
+    if request.is_ajax() and 'recipe' in request.GET:
+        try:
+            del_recipe = Recipe.objects.get(pk=request.GET['recipe'])
+        except Recipe.DoesNotExist:
+            return HttpResponse("Error", content_type="text/plain")
+        del_recipe.delete()
+        return HttpResponse("Success", content_type="text/plain")
+    else:
+        return HttpResponseRedirect(reverse('home'))
     
 @login_required
 def new_ingredient_form(request):
