@@ -30,5 +30,53 @@
   		"name": "teaspoon",
   		"abbreviation": "tsp"
   	}
-  }
+  },
+   {
+      "pk": 4, 
+      "model": "recipes.category", 
+      "fields": {
+         "rght": 2, 
+         "name": "Appetizer", 
+         "parent": null, 
+         "level": 0, 
+         "lft": 1, 
+         "tree_id": 1
+      }
+   }, 
+   {
+      "pk": 1, 
+      "model": "recipes.category", 
+      "fields": {
+         "rght": 4, 
+         "name": "Dinner", 
+         "parent": null, 
+         "level": 0, 
+         "lft": 1, 
+         "tree_id": 2
+      }
+   }, 
+   {
+      "pk": 2, 
+      "model": "recipes.category", 
+      "fields": {
+         "rght": 3, 
+         "name": "Pasta", 
+         "parent": 1, 
+         "level": 1, 
+         "lft": 2, 
+         "tree_id": 2
+      }
+   }, 
+   {
+      "pk": 3, 
+      "model": "recipes.category", 
+      "fields": {
+         "rght": 2, 
+         "name": "Vegetarian", 
+         "parent": null, 
+         "level": 0, 
+         "lft": 1, 
+         "tree_id": 3
+      }
+   }
 ]

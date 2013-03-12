@@ -5,7 +5,7 @@ Created on Feb 21, 2013
 '''
 from django.db import models
 from django.utils import timezone
-
+from mptt.models import TreeForeignKey, MPTTModel
 from django.contrib.admin.models import User
 
 
@@ -17,6 +17,7 @@ class Recipe(models.Model):
     date_added = models.DateTimeField()
     last_modified = models.DateTimeField()
     added_by = models.ForeignKey(User)
+    categories = models.ManyToManyField('Category')
     
     def save(self,*args,**kwargs):
         now = timezone.now()
@@ -67,3 +68,20 @@ class RecipeStep(models.Model):
     recipe = models.ForeignKey('Recipe')
     number = models.PositiveSmallIntegerField()
     step = models.TextField()
+    
+class Category(MPTTModel):
+    name = models.CharField(max_length=64)
+    parent = TreeForeignKey('self', null=True, blank=True, 
+        related_name="children")
+    
+    def __unicode__(self):
+        return self.name
+    
+    
+    class Meta:
+        verbose_name_plural = 'Categories'
+        
+    
+    class MPTTMeta:
+        order_insertion_by = ['name']
+    

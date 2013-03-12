@@ -7,13 +7,13 @@ Scripting file for repeated development tasks
 from __future__ import with_statement
 from fabric.api import *
 from fabric.contrib.console import confirm
-from cookbook import settings_dev
+import os
 
-env.hosts = ['app01.hdcomm.lan']
+
 
 @task 
 def test():
-    local("python manage.py test")
+    local("./manage.py test")
     
 @task 
 def freeze():
@@ -49,17 +49,18 @@ def pull():
     
 @task
 def sync_db():
-    local("python manage.py syncdb")
+    local("./manage.py syncdb")
 
+@task
 def create_migration(initial=False):
     if initial:
-        local("python manage.py schemamigration recipes --initial")
+        local("./manage.py schemamigration recipes --initial")
     else:
-        local("python manage.py schemamigration recipes")
+        local("./manage.py schemamigration recipes --auto --update")
     
 @task
 def migrate():
-    local("python manage.py migrate recipes")
+    local("./manage.py migrate recipes")
     
 @task 
 def devel_environment():

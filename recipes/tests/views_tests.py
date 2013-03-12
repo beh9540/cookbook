@@ -50,6 +50,7 @@ class ViewTest(TestCase):
         response = self.client.post('/recipes/add/', {
             'recipe-name' : u'Test Recipe',
             'recipe-description' : u'An awesome recipe',
+            'recipe-categories' : u'4',
             'ingredients-TOTAL_FORMS' : u'1',
             'ingredients-INITIAL_FORMS' : u'0',
             'ingredients-MAX_NUM_FORMS' : u'',
@@ -65,7 +66,6 @@ class ViewTest(TestCase):
             'recipe_steps-0-step' : u'Step foo for 42 minutes',
             'recipe_steps-0-number' : u'0',
         })
-        print response.content
         self.assertTemplateNotUsed(response, template_name="add.html")
         self.assertRedirects(response, '/recipes/')
     

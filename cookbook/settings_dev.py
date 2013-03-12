@@ -5,7 +5,6 @@ Contains settings for development testing
 
 @author: bhowell
 '''
-from django.conf import settings
 
 DEBUG = True
 
@@ -27,7 +26,19 @@ DATABASES = {
              
 }
 
-settings.INSTALLED_APPS += ('debug_toolbar', )
+INSTALLED_APPS = (
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+#    'django.contrib.sites',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'django.contrib.admin',
+    'recipes',
+    'south',
+    'mptt',
+    'debug_toolbar',
+)
 
 LOGGING = {
     'version': 1,

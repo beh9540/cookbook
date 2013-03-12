@@ -120,18 +120,24 @@ def add(request):
     if request.method == 'POST':
         recipe_form = RecipeForm(request.POST, request.FILES, 
                 prefix='recipe')
-        if recipe_form.is_valid():
+        ingredient_formset = IngredientFormSet(request.POST, 
+            prefix='ingredients')
+        recipe_step_formset = RecipeStepFormSet(request.POST,
+            prefix='recipe_steps')
+        if recipe_form.is_valid() and ingredient_formset.is_valid()\
+                and recipe_step_formset.is_valid():
             recipe_id = recipe_form.save(commit=False)
             recipe_id.added_by = request.user
             recipe_id.save()
-            ingredient_formset = IngredientFormSet(request.POST, 
-                prefix='ingredients',instance=recipe_id)
-            recipe_step_formset = RecipeStepFormSet(request.POST,
-                prefix='recipe_steps',instance=recipe_id)
-            if ingredient_formset.is_valid() and recipe_step_formset.is_valid():
-                ingredient_formset.save()
-                recipe_step_formset.save()
-                return HttpResponseRedirect(reverse('home'))
+            ingredients = ingredient_formset.save(commit=False)
+            for ingredient in ingredients:
+                ingredient.recipe = recipe_id
+                ingredient.save()
+            recipe_steps = recipe_step_formset.save(commit=False)
+            for recipe_step in recipe_steps:
+                recipe_step.recipe = recipe_id
+                recipe_step.save()
+            return HttpResponseRedirect(reverse('home'))
     else:
         recipe_form = RecipeForm(prefix='recipe')
         ingredient_formset = IngredientFormSet(prefix='ingredients')
